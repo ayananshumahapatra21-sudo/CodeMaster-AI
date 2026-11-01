@@ -9,7 +9,8 @@ import {
   ArrowRight, 
   Cpu, 
   ShieldCheck, 
-  Code2 
+  Code2,
+  Database
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import StatCard from '../components/StatCard';
@@ -17,7 +18,7 @@ import DifficultyCard from '../components/DifficultyCard';
 import StatusIndicator from '../components/StatusIndicator';
 
 export default function DashboardPage({ healthData, loading, onRefreshHealth }) {
-  // Stats (sample baseline telemetry for Milestone 1 dashboard)
+  // Stats
   const stats = {
     solvedCount: 42,
     totalProblems: 150,
@@ -27,9 +28,6 @@ export default function DashboardPage({ healthData, loading, onRefreshHealth }) 
     medium: { solved: 14, total: 70 },
     hard: { solved: 4, total: 30 }
   };
-
-  const isBackendUp = healthData?.status === 'UP';
-  const isDbConnected = healthData?.database?.status === 'CONNECTED';
 
   return (
     <div className="space-y-8">
@@ -54,25 +52,33 @@ export default function DashboardPage({ healthData, loading, onRefreshHealth }) 
             </p>
           </div>
 
-          {/* Quick Action CTA */}
+          {/* Quick Action CTAs */}
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
             <Link
-              to="/problems"
+              to="/problems/1"
               className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold text-sm shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300"
             >
               <Terminal className="w-4 h-4" />
-              <span>Explore Problems</span>
+              <span>Open Monaco Workspace</span>
               <ArrowRight className="w-4 h-4" />
+            </Link>
+
+            <Link
+              to="/problems"
+              className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-navy-800/80 hover:bg-navy-750 text-slate-200 border border-navy-700 hover:border-slate-500 text-xs font-medium transition-all duration-200"
+            >
+              <span>Problem Bank</span>
             </Link>
 
             <a
               href="http://localhost:8080/api/health"
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-navy-800/80 hover:bg-navy-750 text-slate-200 border border-navy-700 hover:border-slate-500 font-mono text-xs transition-all duration-200"
+              className="inline-flex items-center gap-1.5 px-3 py-3 rounded-xl bg-navy-800/60 hover:bg-navy-750 text-slate-300 border border-navy-700 font-mono text-xs transition-all duration-200"
+              title="Open raw telemetry in new tab"
             >
-              <Code2 className="w-4 h-4 text-cyan-400" />
-              <span>GET /api/health</span>
+              <Code2 className="w-3.5 h-3.5 text-cyan-400" />
+              <span>/api/health</span>
             </a>
           </div>
         </div>
@@ -199,7 +205,7 @@ export default function DashboardPage({ healthData, loading, onRefreshHealth }) 
           <div className="p-4 rounded-xl bg-navy-900 border border-navy-800 space-y-1.5">
             <span className="text-cyan-400 font-bold block">3. Frontend Client</span>
             <p className="text-slate-300 font-sans">
-              React + Vite running on port 5173 with dark-navy theme, Axios interceptor, and Lucide React icons.
+              React + Vite on port 5173 with dark-navy theme, Monaco Code Editor, and interactive problem solving.
             </p>
             <span className="inline-block text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
               Verified: READY

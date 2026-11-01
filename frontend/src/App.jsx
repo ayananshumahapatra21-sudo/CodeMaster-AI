@@ -5,19 +5,18 @@ import Footer from './components/Footer';
 import DashboardPage from './pages/DashboardPage';
 import ProblemsPage from './pages/ProblemsPage';
 import ProgressPage from './pages/ProgressPage';
+import ProblemWorkspacePage from './pages/ProblemWorkspacePage';
 import { healthApi } from './api/client';
 
 export default function App() {
   const [healthData, setHealthData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [lastCheckTime, setLastCheckTime] = useState(null);
 
   const fetchHealth = useCallback(async () => {
     setLoading(true);
     try {
       const data = await healthApi.getHealth();
       setHealthData(data);
-      setLastCheckTime(new Date());
     } catch (err) {
       console.warn('[App] Health fetch failed, using fallback status:', err.message);
       setHealthData({
@@ -44,7 +43,6 @@ export default function App() {
 
   useEffect(() => {
     fetchHealth();
-    // Auto-refresh telemetry every 30 seconds
     const interval = setInterval(fetchHealth, 30000);
     return () => clearInterval(interval);
   }, [fetchHealth]);
@@ -53,7 +51,7 @@ export default function App() {
     <Router>
       <div className="min-h-screen bg-navy-950 text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
         <Navbar systemStatus={healthData} />
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <Routes>
             <Route
               path="/"
@@ -66,6 +64,7 @@ export default function App() {
               }
             />
             <Route path="/problems" element={<ProblemsPage />} />
+            <Route path="/problems/:id" element={<ProblemWorkspacePage />} />
             <Route path="/progress" element={<ProgressPage />} />
           </Routes>
         </main>

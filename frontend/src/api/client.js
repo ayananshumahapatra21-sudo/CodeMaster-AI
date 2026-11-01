@@ -11,7 +11,6 @@ const apiClient = axios.create({
   }
 });
 
-// Response interceptor for consistent error handling
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -23,6 +22,21 @@ apiClient.interceptors.response.use(
 export const healthApi = {
   getHealth: async () => {
     const response = await apiClient.get('/health');
+    return response.data;
+  }
+};
+
+export const problemsApi = {
+  getProblems: async () => {
+    const response = await apiClient.get('/problems');
+    return response.data;
+  },
+  getProblemById: async (id) => {
+    const response = await apiClient.get(`/problems/${id}`);
+    return response.data;
+  },
+  runCode: async (id, payload) => {
+    const response = await apiClient.post(`/problems/${id}/run`, payload);
     return response.data;
   }
 };

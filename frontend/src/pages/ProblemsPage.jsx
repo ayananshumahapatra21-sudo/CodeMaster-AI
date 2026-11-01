@@ -1,22 +1,39 @@
-import React, { useState } from 'react';
-import { Terminal, Search, Filter, CheckCircle2, ArrowRight, Code2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { Terminal, Search, CheckCircle2, ArrowRight } from 'lucide-react';
+import { problemsApi } from '../api/client';
 
 export default function ProblemsPage() {
   const [search, setSearch] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('All');
+  const [problems, setProblems] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const problems = [
-    { id: 1, title: 'Two Sum', category: 'Arrays & Hashing', difficulty: 'Easy', status: 'Solved', acceptance: '52.4%' },
-    { id: 2, title: 'Valid Anagram', category: 'Strings', difficulty: 'Easy', status: 'Solved', acceptance: '64.1%' },
-    { id: 3, title: 'Longest Substring Without Repeating Characters', category: 'Sliding Window', difficulty: 'Medium', status: 'Attempted', acceptance: '34.8%' },
-    { id: 4, title: 'Trapping Rain Water', category: 'Two Pointers', difficulty: 'Hard', status: 'Unsolved', acceptance: '61.2%' },
-    { id: 5, title: 'Reverse Linked List', category: 'Linked Lists', difficulty: 'Easy', status: 'Solved', acceptance: '76.8%' },
-    { id: 6, title: 'Lowest Common Ancestor of a BST', category: 'Trees', difficulty: 'Medium', status: 'Unsolved', acceptance: '53.9%' }
-  ];
+  useEffect(() => {
+    async function loadProblems() {
+      try {
+        const data = await problemsApi.getProblems();
+        setProblems(data);
+      } catch (err) {
+        console.warn('Failed to fetch problems from backend, using default list:', err);
+        setProblems([
+          { id: 1, title: 'Two Sum', category: 'Arrays & Hashing', difficulty: 'Easy', status: 'Solved', acceptance: '52.4%' },
+          { id: 2, title: 'Valid Anagram', category: 'Strings', difficulty: 'Easy', status: 'Solved', acceptance: '64.1%' },
+          { id: 3, title: 'Longest Substring Without Repeating Characters', category: 'Sliding Window', difficulty: 'Medium', status: 'Attempted', acceptance: '34.8%' },
+          { id: 4, title: 'Trapping Rain Water', category: 'Two Pointers', difficulty: 'Hard', status: 'Unsolved', acceptance: '61.2%' },
+          { id: 5, title: 'Reverse Linked List', category: 'Linked Lists', difficulty: 'Easy', status: 'Solved', acceptance: '76.8%' },
+          { id: 6, title: 'Lowest Common Ancestor of a BST', category: 'Trees', difficulty: 'Medium', status: 'Unsolved', acceptance: '53.9%' }
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadProblems();
+  }, []);
 
   const filtered = problems.filter(p => {
     const matchesSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase());
-    const matchesDiff = selectedDifficulty === 'All' || p.difficulty === selectedDifficulty;
+    const matchesDiff = selectedDifficulty === 'All' || p.difficulty.toLowerCase() === selectedDifficulty.toLowerCase();
     return matchesSearch && matchesDiff;
   });
 
@@ -43,7 +60,7 @@ export default function ProblemsPage() {
             <span>Problem Bank</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Browse and practice curated competitive programming problems.
+            Browse and practice curated competitive programming problems. Click "Solve" to open the Monaco Editor.
           </p>
         </div>
 
@@ -66,7 +83,7 @@ export default function ProblemsPage() {
                 key={diff}
                 onClick={() => setSelectedDifficulty(diff)}
                 className={`px-3 py-1 rounded-lg font-medium transition-all ${
-                  selectedDifficulty === diff
+                  selectedDifficulty.toLowerCase() === diff.toLowerCase()
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-slate-400 hover:text-white'
                 }`}
@@ -92,34 +109,53 @@ export default function ProblemsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-navy-800/80 font-sans">
-            {filtered.map((item) => (
-              <tr key={item.id} className="hover:bg-navy-800/40 transition-colors">
-                <td className="py-4 px-6 font-mono text-slate-400">{item.id}</td>
-                <td className="py-4 px-6 font-semibold text-white flex items-center gap-2">
-                  <span>{item.title}</span>
-                  {item.status === 'Solved' && (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 inline" title="Solved" />
-                  )}
-                </td>
-                <td className="py-4 px-6">
-                  <span className="px-2.5 py-1 rounded-md bg-navy-900 text-slate-300 border border-navy-800 text-[11px] font-mono">
-                    {item.category}
-                  </span>
-                </td>
-                <td className="py-4 px-6">
-                  <span className={`px-2.5 py-0.5 rounded-full font-mono text-[11px] font-bold border ${getDifficultyBadge(item.difficulty)}`}>
-                    {item.difficulty}
-                  </span>
-                </td>
-                <td className="py-4 px-6 font-mono text-slate-400">{item.acceptance}</td>
-                <td className="py-4 px-6 text-right">
-                  <button className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-500/10 text-cyan-400 border border-blue-500/20 hover:bg-blue-500 hover:text-white font-medium transition-all">
-                    <span>Solve</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+            {loading ? (
+              <tr>
+                <td colSpan="6" className="py-8 text-center text-slate-400 font-mono">
+                  Loading problem catalog...
                 </td>
               </tr>
-            ))}
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="py-8 text-center text-slate-500 font-mono">
+                  No problems matched the selected filters.
+                </td>
+              </tr>
+            ) : (
+              filtered.map((item) => (
+                <tr key={item.id} className="hover:bg-navy-800/40 transition-colors">
+                  <td className="py-4 px-6 font-mono text-slate-400">#{item.id}</td>
+                  <td className="py-4 px-6 font-semibold text-white">
+                    <Link to={`/problems/${item.id}`} className="hover:text-cyan-400 transition-colors flex items-center gap-2">
+                      <span>{item.title}</span>
+                      {item.status === 'Solved' && (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 inline" title="Solved" />
+                      )}
+                    </Link>
+                  </td>
+                  <td className="py-4 px-6">
+                    <span className="px-2.5 py-1 rounded-md bg-navy-900 text-slate-300 border border-navy-800 text-[11px] font-mono">
+                      {item.category}
+                    </span>
+                  </td>
+                  <td className="py-4 px-6">
+                    <span className={`px-2.5 py-0.5 rounded-full font-mono text-[11px] font-bold border ${getDifficultyBadge(item.difficulty)}`}>
+                      {item.difficulty}
+                    </span>
+                  </td>
+                  <td className="py-4 px-6 font-mono text-slate-400">{item.acceptance || '50%'}</td>
+                  <td className="py-4 px-6 text-right">
+                    <Link
+                      to={`/problems/${item.id}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 text-cyan-400 border border-blue-500/20 hover:bg-blue-600 hover:text-white font-medium transition-all shadow-sm"
+                    >
+                      <span>Solve</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
