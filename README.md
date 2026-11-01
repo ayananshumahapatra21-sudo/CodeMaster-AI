@@ -44,6 +44,18 @@ Milestone 1 establishes the foundational infrastructure, full-stack scaffolding,
 
 ---
 
+## Deployment & Hosting
+
+CodeMaster AI supports multiple instant deployment options:
+- **Netlify Drop**: Instant drag-and-drop of `frontend/dist` or `CodeMaster-AI-Deployment.zip` onto [app.netlify.com/drop](https://app.netlify.com/drop) (includes `_redirects` SPA rewrite rules).
+- **Vercel / Netlify Git**: Direct import via GitHub repository.
+- **GitHub Pages**: Automated CI/CD deployment via GitHub Actions (`.github/workflows/deploy.yml`).
+- **Render / Docker**: Full-stack multi-container deployment via `render.yaml` and `backend/Dockerfile`.
+
+👉 Full step-by-step instructions available in **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**.
+
+---
+
 ## Quickstart Guide
 
 ### Prerequisites

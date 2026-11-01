@@ -1,0 +1,55 @@
+services:
+  # Spring Boot 3 Backend
+  - type: web
+    name: codemaster-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: DB_HOST
+        fromDatabase:
+          name: codemaster-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: codemaster-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: codemaster-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: codemaster-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: codemaster-db
+          property: password
+
+  # Static Frontend on Render / Netlify
+  - type: web
+    name: codemaster-frontend
+    runtime: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: ./frontend/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: codemaster-api
+          property: host
+
+databases:
+  # Managed PostgreSQL Database
+  - name: codemaster-db
+    plan: free
+    databaseName: codemaster_db
+    user: codemaster_user

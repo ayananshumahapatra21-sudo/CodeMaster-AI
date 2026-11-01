@@ -25,6 +25,8 @@ export default function App() {
         version: '1.0.0-SNAPSHOT',
         uptime: 'Offline',
         environment: {
+          author: 'Ayananshu Mahapatra',
+          leadDeveloper: 'Ayananshu Mahapatra',
           javaVersion: '21',
           springBootVersion: '3.3.5'
         },
