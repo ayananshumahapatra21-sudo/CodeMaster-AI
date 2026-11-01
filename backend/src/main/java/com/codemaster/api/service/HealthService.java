@@ -42,6 +42,8 @@ public class HealthService {
         String overallStatus = "CONNECTED".equalsIgnoreCase(databaseHealth.getStatus()) ? "UP" : "DEGRADED";
 
         Map<String, String> environment = new LinkedHashMap<>();
+        environment.put("author", "Ayananshu Mahapatra");
+        environment.put("leadDeveloper", "Ayananshu Mahapatra");
         environment.put("javaVersion", System.getProperty("java.version", "21"));
         environment.put("javaVendor", System.getProperty("java.vendor", "Unknown"));
         environment.put("springBootVersion", SpringBootVersion.getVersion());

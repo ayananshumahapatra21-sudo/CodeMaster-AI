@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Code2, LayoutDashboard, Terminal, LineChart, Sparkles } from 'lucide-react';
+import { Code2, LayoutDashboard, Terminal, LineChart, Sparkles, User } from 'lucide-react';
 
 export default function Navbar({ systemStatus }) {
   const isHealthy = systemStatus?.status === 'UP' && systemStatus?.database?.status === 'CONNECTED';
@@ -9,7 +9,7 @@ export default function Navbar({ systemStatus }) {
     <nav className="sticky top-0 z-50 bg-navy-900/90 backdrop-blur-md border-b border-navy-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Brand Logo */}
+          {/* Brand Logo with Creator Attribution */}
           <div className="flex items-center gap-3">
             <NavLink to="/" className="flex items-center gap-3 group">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-blue-500 to-cyan-400 p-[1px] shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-all duration-300">
@@ -27,7 +27,7 @@ export default function Navbar({ systemStatus }) {
                   </span>
                 </div>
                 <span className="text-[10px] text-slate-400 tracking-wide font-mono -mt-0.5">
-                  Milestone 1 • Architecture
+                  by <span className="text-cyan-400 font-bold">Ayananshu Mahapatra</span>
                 </span>
               </div>
             </NavLink>
@@ -78,7 +78,7 @@ export default function Navbar({ systemStatus }) {
             </NavLink>
           </div>
 
-          {/* System Telemetry Quick Pill */}
+          {/* System Telemetry & User Attribution Pill */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-navy-850 border border-navy-800 shadow-inner">
               <span className="relative flex h-2 w-2">
@@ -93,14 +93,26 @@ export default function Navbar({ systemStatus }) {
                   }`}
                 />
               </span>
-              <span className="text-xs font-mono font-medium text-slate-300">
-                {isHealthy ? 'All Systems Operational' : 'Telemetry Syncing...'}
+              <span className="text-xs font-mono font-medium text-slate-300 hidden sm:inline">
+                {isHealthy ? 'Operational' : 'Connecting...'}
               </span>
             </div>
 
-            <div className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-md bg-blue-500/10 border border-blue-500/20 text-[11px] font-mono text-cyan-400">
-              <Sparkles className="w-3 h-3" />
-              <span>v1.0.0</span>
+            {/* Author Profile Badge */}
+            <div className="flex items-center gap-2 pl-3 border-l border-navy-800">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 via-cyan-400 to-indigo-500 p-[1px] shadow-sm shadow-blue-500/20">
+                <div className="w-full h-full bg-navy-950 rounded-full flex items-center justify-center text-[11px] font-black font-mono text-cyan-400">
+                  AM
+                </div>
+              </div>
+              <div className="hidden sm:flex flex-col">
+                <span className="text-xs font-bold text-white font-sans leading-none">
+                  Ayananshu Mahapatra
+                </span>
+                <span className="text-[10px] text-cyan-400 font-mono mt-0.5">
+                  Lead Engineer
+                </span>
+              </div>
             </div>
           </div>
         </div>

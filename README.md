@@ -1,6 +1,6 @@
 # CodeMaster AI
 
-> Next-generation AI-powered competitive programming and coding practice platform.
+> Next-generation AI-powered competitive programming platform designed and engineered by **Ayananshu Mahapatra**.
 
 [![Java 21](https://img.shields.io/badge/Java-21-orange.svg)](https://www.oracle.com/java/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
@@ -130,5 +130,13 @@ Returns live service and database connectivity telemetry.
 
 ---
 
+## Author & Lead Developer
+
+**Ayananshu Mahapatra**
+- **GitHub**: [@ayananshumahapatra21-sudo](https://github.com/ayananshumahapatra21-sudo)
+- **Project Repository**: [CodeMaster-AI](https://github.com/ayananshumahapatra21-sudo/CodeMaster-AI)
+
+---
+
 ## License
-MIT License © 2026 CodeMaster AI.
+MIT License © 2026 CodeMaster AI • Ayananshu Mahapatra.

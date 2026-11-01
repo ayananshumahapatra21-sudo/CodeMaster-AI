@@ -10,7 +10,7 @@ import {
   Cpu, 
   ShieldCheck, 
   Code2,
-  Database
+  UserCheck
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import StatCard from '../components/StatCard';
@@ -18,7 +18,6 @@ import DifficultyCard from '../components/DifficultyCard';
 import StatusIndicator from '../components/StatusIndicator';
 
 export default function DashboardPage({ healthData, loading, onRefreshHealth }) {
-  // Stats
   const stats = {
     solvedCount: 42,
     totalProblems: 150,
@@ -31,7 +30,7 @@ export default function DashboardPage({ healthData, loading, onRefreshHealth }) 
 
   return (
     <div className="space-y-8">
-      {/* Hero Welcome Banner */}
+      {/* Hero Welcome Banner with Personal Branding */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-navy-900 via-navy-850 to-navy-900 border border-navy-800 p-8 shadow-2xl">
         <div className="absolute top-0 right-0 -mt-12 -mr-12 w-96 h-96 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-1/3 -mb-16 w-80 h-80 rounded-full bg-cyan-500/5 blur-3xl pointer-events-none" />
@@ -40,15 +39,15 @@ export default function DashboardPage({ healthData, loading, onRefreshHealth }) 
           <div className="space-y-3 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-mono text-cyan-400">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Milestone 1 • System Connectivity & Dashboard Online</span>
+              <span>Lead Developer • Ayananshu Mahapatra</span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-              Welcome back, <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-400 bg-clip-text text-transparent">Developer</span>
+              Welcome back, <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-400 bg-clip-text text-transparent">Ayananshu Mahapatra</span>
             </h1>
 
             <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-              Your AI-augmented development environment is ready. Spring Boot is active on Java 21, and PostgreSQL connection pooling is operational.
+              Your AI-augmented development environment is active. Spring Boot is running on Java 21, and PostgreSQL connection pooling is operational.
             </p>
           </div>
 

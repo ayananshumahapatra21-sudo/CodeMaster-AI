@@ -1,19 +1,21 @@
 import React from 'react';
-import { Terminal, Layers, ShieldCheck, Heart } from 'lucide-react';
+import { Terminal, Heart } from 'lucide-react';
 
 export default function Footer() {
   return (
     <footer className="bg-navy-950 border-t border-navy-800/80 py-8 text-slate-400 mt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          {/* Brand Info */}
+          {/* Brand Info with Creator Name */}
           <div className="flex items-center gap-2.5 text-xs">
             <div className="p-1.5 rounded-lg bg-blue-500/10 text-cyan-400 border border-blue-500/20">
               <Terminal className="w-4 h-4" />
             </div>
             <div>
               <span className="font-bold text-slate-200">CodeMaster AI</span>
-              <span className="text-slate-500 ml-2">© 2026 • Advanced Coding Practice Platform</span>
+              <span className="text-slate-500 ml-2">
+                © 2026 • Designed & Built with <Heart className="w-3.5 h-3.5 text-rose-500 inline fill-rose-500" /> by <strong className="text-white">Ayananshu Mahapatra</strong>
+              </span>
             </div>
           </div>
 

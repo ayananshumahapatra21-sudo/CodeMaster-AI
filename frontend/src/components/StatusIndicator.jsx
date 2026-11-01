@@ -71,10 +71,14 @@ export default function StatusIndicator({ healthData, loading, onRefresh }) {
             )}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-navy-800 text-xs grid grid-cols-2 gap-2 text-slate-300 font-mono">
+          <div className="mt-4 pt-3 border-t border-navy-800 text-xs grid grid-cols-2 sm:grid-cols-3 gap-2 text-slate-300 font-mono">
             <div>
               <span className="text-slate-500 block text-[10px] uppercase">Service Name</span>
               <span className="font-semibold text-cyan-300">{healthData?.application || 'codemaster-api'}</span>
+            </div>
+            <div>
+              <span className="text-slate-500 block text-[10px] uppercase">Lead Developer</span>
+              <span className="font-semibold text-indigo-300">{healthData?.environment?.leadDeveloper || 'Ayananshu Mahapatra'}</span>
             </div>
             <div>
               <span className="text-slate-500 block text-[10px] uppercase">Runtime</span>
@@ -84,7 +88,7 @@ export default function StatusIndicator({ healthData, loading, onRefresh }) {
               <span className="text-slate-500 block text-[10px] uppercase">Spring Boot</span>
               <span className="font-semibold">v{healthData?.environment?.springBootVersion || '3.3.5'}</span>
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <span className="text-slate-500 block text-[10px] uppercase">Server Uptime</span>
               <span className="font-semibold text-emerald-400 flex items-center gap-1">
                 <Clock className="w-3 h-3 inline" />

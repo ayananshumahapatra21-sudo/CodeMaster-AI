@@ -1,4 +1,5 @@
 # Milestone 1: Project Scaffolding & System Connectivity
+**Developer**: Ayananshu Mahapatra
 
 ## Objectives
 - Scaffold the `CodeMaster AI` repository structure: `frontend/`, `backend/`, and `docs/`.

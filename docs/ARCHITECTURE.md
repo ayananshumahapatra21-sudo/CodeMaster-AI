@@ -1,4 +1,5 @@
 # Architecture Overview - CodeMaster AI
+**Lead Architect & Developer**: Ayananshu Mahapatra
 
 ## 1. System Architecture
 
