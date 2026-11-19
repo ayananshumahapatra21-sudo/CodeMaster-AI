@@ -11,8 +11,7 @@ INSERT INTO topics (id, name) VALUES
 (5, 'Binary Search'),
 (6, 'Linked List'),
 (7, 'Trees'),
-(8, 'Dynamic Programming')
-ON CONFLICT (id) DO NOTHING;
+(8, 'Dynamic Programming');
 
 -- Seed Problems
 INSERT INTO problems (id, title, slug, description, difficulty, constraints, acceptance_rate) VALUES
@@ -63,8 +62,7 @@ s consists of parentheses only ''()[]{}''.',
 'n == height.length
 1 <= n <= 2 * 10^4
 0 <= height[i] <= 10^5',
-'60.2%')
-ON CONFLICT (id) DO NOTHING;
+'60.2%');
 
 -- Map Problems to Topics
 INSERT INTO problem_topics (problem_id, topic_id) VALUES
@@ -73,8 +71,7 @@ INSERT INTO problem_topics (problem_id, topic_id) VALUES
 (3, 3), -- Longest Substring -> Sliding Window
 (4, 4), -- Valid Parentheses -> Stack
 (5, 2), -- Trapping Rain Water -> Two Pointers
-(5, 8)  -- Trapping Rain Water -> Dynamic Programming
-ON CONFLICT (problem_id, topic_id) DO NOTHING;
+(5, 8); -- Trapping Rain Water -> Dynamic Programming
 
 -- Seed Sample and Hidden Test Cases
 INSERT INTO test_cases (id, problem_id, input, expected_output, is_hidden) VALUES
@@ -101,5 +98,4 @@ INSERT INTO test_cases (id, problem_id, input, expected_output, is_hidden) VALUE
 
 -- Problem 5: Trapping Rain Water
 (14, 5, 'height = [0,1,0,2,1,0,1,3,2,1,2,1]', '6', FALSE),
-(15, 5, 'height = [4,2,0,3,2,5]', '9', TRUE)
-ON CONFLICT (id) DO NOTHING;
+(15, 5, 'height = [4,2,0,3,2,5]', '9', TRUE);
