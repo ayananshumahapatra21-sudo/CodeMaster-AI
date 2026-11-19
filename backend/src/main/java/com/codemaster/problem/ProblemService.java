@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ProblemService {
@@ -32,19 +33,33 @@ public class ProblemService {
     }
 
     public List<ProblemDto> getAllProblems() {
+        return getProblems(null, null, null);
+    }
+
+    public List<ProblemDto> getProblems(String difficulty, String topic, String search) {
+        List<ProblemDto> all = new ArrayList<>();
         try {
             List<Problem> dbProblems = problemRepository.findAll();
             if (!dbProblems.isEmpty()) {
-                List<ProblemDto> dtos = new ArrayList<>();
                 for (Problem p : dbProblems) {
-                    dtos.add(mapToDto(p));
+                    all.add(mapToDto(p));
                 }
-                return dtos;
             }
         } catch (Exception ex) {
-            logger.warn("Database query failed in getAllProblems, serving fallback cache: {}", ex.getMessage());
+            logger.warn("Database query failed in getProblems, serving fallback cache: {}", ex.getMessage());
         }
-        return fallbackProblems;
+
+        if (all.isEmpty()) {
+            all = new ArrayList<>(fallbackProblems);
+        }
+
+        return all.stream()
+                .filter(p -> difficulty == null || difficulty.isBlank() || p.getDifficulty().equalsIgnoreCase(difficulty))
+                .filter(p -> topic == null || topic.isBlank() || p.getTopic().equalsIgnoreCase(topic))
+                .filter(p -> search == null || search.isBlank() ||
+                        p.getTitle().toLowerCase().contains(search.toLowerCase()) ||
+                        p.getDescription().toLowerCase().contains(search.toLowerCase()))
+                .collect(Collectors.toList());
     }
 
     public Optional<ProblemDto> getProblemById(Long id) {

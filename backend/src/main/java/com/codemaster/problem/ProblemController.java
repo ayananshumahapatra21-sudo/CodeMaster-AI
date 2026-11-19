@@ -26,9 +26,12 @@ public class ProblemController {
     }
 
     @GetMapping({"/api/problems", "/api/v1/problems"})
-    @Operation(summary = "List all problems", description = "Retrieves all available coding problems with metadata, difficulty, and statistics.")
-    public ResponseEntity<List<ProblemDto>> getProblems() {
-        return ResponseEntity.ok(problemService.getAllProblems());
+    @Operation(summary = "List all problems with filtering", description = "Retrieves problems filtered by difficulty, topic category, or search keyword.")
+    public ResponseEntity<List<ProblemDto>> getProblems(
+            @RequestParam(required = false) String difficulty,
+            @RequestParam(required = false) String topic,
+            @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(problemService.getProblems(difficulty, topic, search));
     }
 
     @GetMapping({"/api/problems/{id}", "/api/v1/problems/{id}"})

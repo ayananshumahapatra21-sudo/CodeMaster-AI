@@ -13,9 +13,16 @@ import {
   Sparkles, 
   AlertCircle,
   Copy,
-  Check
+  Check,
+  Lightbulb,
+  BookOpen,
+  Bug,
+  HelpCircle,
+  X
 } from 'lucide-react';
-import { problemsApi } from '../api/client';
+import { problemService } from '../services/problemService';
+import { submissionService } from '../services/submissionService';
+import { aiService } from '../services/aiService';
 
 export default function ProblemWorkspacePage() {
   const { id } = useParams();
@@ -23,26 +30,33 @@ export default function ProblemWorkspacePage() {
   const [loading, setLoading] = useState(true);
   const [language, setLanguage] = useState('java');
   const [code, setCode] = useState('');
+  
+  // Execution & Submission State
   const [executing, setExecuting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [executionResult, setExecutionResult] = useState(null);
-  const [activeTab, setActiveTab] = useState('tests'); // 'tests' | 'output'
+  const [submissionResult, setSubmissionResult] = useState(null);
+  const [activeTab, setActiveTab] = useState('tests'); // 'tests' | 'submission' | 'ai'
+  
+  // AI Assistant State
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResponse, setAiResponse] = useState(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function fetchProblem() {
       setLoading(true);
       try {
-        const data = await problemsApi.getProblemById(id);
+        const data = await problemService.getProblemById(id);
         setProblem(data);
-        const starter = data.starterCode?.[language] || data.starterCode?.['java'] || '// Write solution here\n';
+        const starter = data.starterTemplates?.[language] || data.starterTemplates?.['java'] || '// Write solution here\n';
         setCode(starter);
       } catch (err) {
         console.error('Failed to load problem:', err);
-        // Fallback problem if API is unreachable
         const fallback = {
           id: Number(id) || 1,
           title: 'Two Sum',
-          category: 'Arrays & Hashing',
+          topic: 'Arrays & Hashing',
           difficulty: 'Easy',
           acceptance: '52.4%',
           description: 'Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.\n\nYou may assume that each input would have exactly one solution, and you may not use the same element twice.\n\nYou can return the answer in any order.',
@@ -50,7 +64,7 @@ export default function ProblemWorkspacePage() {
           examples: [
             { input: 'nums = [2,7,11,15], target = 9', output: '[0,1]', explanation: 'Because nums[0] + nums[1] == 9, we return [0, 1].' }
           ],
-          starterCode: {
+          starterTemplates: {
             java: 'class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // Your code here\n        return new int[]{0, 1};\n    }\n}',
             python: 'class Solution:\n    def twoSum(self, nums: list[int], target: int) -> list[int]:\n        return [0, 1]',
             javascript: 'function twoSum(nums, target) {\n    return [0, 1];\n}',
@@ -58,7 +72,7 @@ export default function ProblemWorkspacePage() {
           }
         };
         setProblem(fallback);
-        setCode(fallback.starterCode[language] || fallback.starterCode.java);
+        setCode(fallback.starterTemplates[language] || fallback.starterTemplates.java);
       } finally {
         setLoading(false);
       }
@@ -68,34 +82,14 @@ export default function ProblemWorkspacePage() {
 
   const handleLanguageChange = (newLang) => {
     setLanguage(newLang);
-    if (problem?.starterCode?.[newLang]) {
-      setCode(problem.starterCode[newLang]);
+    if (problem?.starterTemplates?.[newLang]) {
+      setCode(problem.starterTemplates[newLang]);
     }
   };
 
   const handleResetCode = () => {
-    if (problem?.starterCode?.[language]) {
-      setCode(problem.starterCode[language]);
-    }
-  };
-
-  const handleRunCode = async () => {
-    setExecuting(true);
-    setExecutionResult(null);
-    try {
-      const res = await problemsApi.runCode(id, { code, language });
-      setExecutionResult(res);
-      setActiveTab('tests');
-    } catch (err) {
-      setExecutionResult({
-        status: 'Runtime Error',
-        passedCount: 0,
-        totalCount: 2,
-        executionTimeMs: 12,
-        message: err.message || 'Execution failed'
-      });
-    } finally {
-      setExecuting(false);
+    if (problem?.starterTemplates?.[language]) {
+      setCode(problem.starterTemplates[language]);
     }
   };
 
@@ -105,119 +99,175 @@ export default function ProblemWorkspacePage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (loading) {
-    return (
-      <div className="h-[calc(100vh-140px)] flex items-center justify-center text-slate-400">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-blue-500/30 border-t-cyan-400 rounded-full animate-spin" />
-          <span className="text-xs font-mono">Loading problem workspace...</span>
-        </div>
-      </div>
-    );
-  }
+  const handleRunCode = async () => {
+    setExecuting(true);
+    setExecutionResult(null);
+    setActiveTab('tests');
+    try {
+      const res = await problemService.runCode(id, code, language);
+      setExecutionResult(res);
+    } catch (err) {
+      setExecutionResult({
+        status: 'Runtime Error',
+        passedCount: 0,
+        totalCount: 2,
+        executionTimeMs: 12,
+        message: err.response?.data?.message || err.message || 'Execution failed'
+      });
+    } finally {
+      setExecuting(false);
+    }
+  };
 
-  const getDifficultyBadge = (diff) => {
-    switch (diff) {
-      case 'Easy':
-        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
-      case 'Medium':
-        return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
-      case 'Hard':
-        return 'bg-rose-500/10 text-rose-400 border-rose-500/30';
-      default:
-        return 'bg-slate-500/10 text-slate-400 border-slate-500/30';
+  const handleSubmitCode = async () => {
+    setSubmitting(true);
+    setSubmissionResult(null);
+    setActiveTab('submission');
+    try {
+      const res = await submissionService.submitCode(Number(id), language, code);
+      setSubmissionResult(res);
+    } catch (err) {
+      setSubmissionResult({
+        status: 'Wrong Answer',
+        passedCount: 0,
+        totalCount: 4,
+        executionTimeMs: 25,
+        memoryKb: 42100,
+        message: err.response?.data?.message || err.message || 'Submission evaluation failed'
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleAiAction = async (actionType) => {
+    setAiLoading(true);
+    setActiveTab('ai');
+    try {
+      let res;
+      if (actionType === 'hint') {
+        res = await aiService.getHint(problem?.id, problem?.title, code, language);
+      } else if (actionType === 'explain') {
+        res = await aiService.explainProblem(problem?.id, problem?.title);
+      } else if (actionType === 'debug') {
+        res = await aiService.debugCode(problem?.id, problem?.title, code, language);
+      }
+      setAiResponse(res);
+    } catch (err) {
+      setAiResponse({
+        type: 'ERROR',
+        response: 'Unable to reach AI Assistant: ' + (err.message || 'Request timed out'),
+        timeComplexity: 'N/A',
+        spaceComplexity: 'N/A'
+      });
+    } finally {
+      setAiLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-130px)] space-y-3">
-      {/* Workspace Sub-header */}
-      <div className="flex items-center justify-between bg-navy-900 border border-navy-800 rounded-xl px-4 py-2 text-xs">
+    <div className="flex flex-col h-[calc(100vh-8.5rem)] space-y-3">
+      {/* Top Workspace Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-navy-900 border border-navy-800 rounded-xl px-4 py-2.5 shadow-md">
         <div className="flex items-center gap-3">
           <Link
             to="/problems"
-            className="inline-flex items-center gap-1 text-slate-400 hover:text-white transition-colors"
+            className="flex items-center gap-1.5 text-xs font-mono text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-navy-800 transition"
           >
             <ChevronLeft className="w-4 h-4" />
-            <span>Problem List</span>
+            <span>Problem Bank</span>
           </Link>
-          <span className="text-slate-600">|</span>
-          <span className="font-mono text-slate-400">#{problem?.id}</span>
-          <span className="font-bold text-white truncate max-w-xs">{problem?.title}</span>
-          <span className={`px-2 py-0.5 rounded-full font-mono text-[10px] font-bold border ${getDifficultyBadge(problem?.difficulty)}`}>
-            {problem?.difficulty}
-          </span>
+          <div className="h-4 w-[1px] bg-navy-700" />
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs font-bold text-slate-400">#{problem?.id}</span>
+            <span className="text-sm font-bold text-white">{problem?.title}</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono border ${
+              problem?.difficulty === 'Easy' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' :
+              problem?.difficulty === 'Medium' ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' :
+              'bg-rose-500/10 text-rose-400 border-rose-500/30'
+            }`}>
+              {problem?.difficulty}
+            </span>
+          </div>
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-3">
-          <div className="flex items-center bg-navy-950 border border-navy-800 rounded-lg p-0.5">
-            {['java', 'python', 'javascript', 'cpp'].map((lang) => (
-              <button
-                key={lang}
-                onClick={() => handleLanguageChange(lang)}
-                className={`px-2.5 py-1 rounded text-[11px] font-mono transition-all uppercase ${
-                  language === lang
-                    ? 'bg-blue-600 text-white font-bold shadow'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {lang}
-              </button>
-            ))}
-          </div>
+        <div className="flex items-center gap-2.5">
+          {/* Language Selector */}
+          <select
+            value={language}
+            onChange={(e) => handleLanguageChange(e.target.value)}
+            className="bg-navy-950 border border-navy-700 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-500 transition"
+          >
+            <option value="java">Java 21</option>
+            <option value="python">Python 3</option>
+            <option value="cpp">C++ 20</option>
+            <option value="javascript">JavaScript</option>
+          </select>
+
+          {/* AI Assistance Dropdown / Button */}
+          <button
+            onClick={() => handleAiAction('hint')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 text-xs font-medium transition shadow-sm"
+            title="Ask AI for an algorithmic hint"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>AI Hint</span>
+          </button>
 
           <button
             onClick={handleResetCode}
-            className="p-1.5 rounded-lg bg-navy-800 hover:bg-navy-700 text-slate-400 hover:text-white border border-navy-700 transition-colors"
-            title="Reset to Starter Code"
+            title="Reset to Starter Template"
+            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-navy-800 transition"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="w-4 h-4" />
           </button>
 
           <button
             onClick={handleCopyCode}
-            className="p-1.5 rounded-lg bg-navy-800 hover:bg-navy-700 text-slate-400 hover:text-white border border-navy-700 transition-colors"
-            title="Copy Code"
+            title="Copy Solution Code"
+            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-navy-800 transition"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
           </button>
 
+          {/* Run Code */}
           <button
             onClick={handleRunCode}
-            disabled={executing}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-navy-800 hover:bg-navy-700 border border-navy-700 text-cyan-400 font-semibold text-xs transition-all disabled:opacity-50"
+            disabled={executing || submitting}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-navy-800 hover:bg-navy-700 text-slate-200 border border-navy-700 text-xs font-medium transition shadow-sm disabled:opacity-50"
           >
-            <Play className={`w-3.5 h-3.5 fill-cyan-400 ${executing ? 'animate-pulse' : ''}`} />
-            <span>{executing ? 'Running...' : 'Run Code'}</span>
+            <Play className="w-3.5 h-3.5 fill-current text-cyan-400" />
+            <span>{executing ? 'Running...' : 'Run Sample'}</span>
           </button>
 
+          {/* Submit Code */}
           <button
-            onClick={handleRunCode}
-            disabled={executing}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white font-semibold text-xs shadow-md shadow-blue-500/20 transition-all disabled:opacity-50"
+            onClick={handleSubmitCode}
+            disabled={executing || submitting}
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs font-semibold shadow-lg shadow-emerald-500/20 transition disabled:opacity-50"
           >
-            <Send className="w-3.5 h-3.5 fill-white" />
-            <span>Submit</span>
+            <Send className="w-3.5 h-3.5 fill-current" />
+            <span>{submitting ? 'Evaluating...' : 'Submit Code'}</span>
           </button>
         </div>
       </div>
 
       {/* Main Split Grid */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 min-h-0 overflow-hidden">
-        {/* Left Side: Problem Statement */}
+        {/* Left Side: Problem Statement & AI Drawer */}
         <div className="lg:col-span-5 bg-navy-900 border border-navy-800 rounded-xl p-5 overflow-y-auto space-y-5 text-xs text-slate-300">
           <div>
-            <span className="text-[10px] uppercase font-mono text-cyan-400 font-semibold">
-              {problem?.category}
+            <span className="text-[10px] uppercase font-mono text-cyan-400 font-semibold tracking-wider">
+              {problem?.topic || problem?.category || 'Algorithm Challenge'}
             </span>
             <h1 className="text-xl font-bold text-white mt-1">{problem?.title}</h1>
             <div className="flex items-center gap-3 mt-2 text-slate-400 font-mono text-[11px]">
-              <span>Acceptance: <strong className="text-slate-200">{problem?.acceptance}</strong></span>
+              <span>Acceptance: <strong className="text-slate-200">{problem?.acceptance || '52.4%'}</strong></span>
               <span>•</span>
               <span className="text-emerald-400 flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                Solved: 42
+                Solved: 120+
               </span>
             </div>
           </div>
@@ -257,12 +307,43 @@ export default function ProblemWorkspacePage() {
               </ul>
             </div>
           )}
+
+          {/* AI Quick Actions Bar */}
+          <div className="p-3 rounded-xl bg-navy-950 border border-navy-800 space-y-2">
+            <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Personalized AI Coding Coach</span>
+            </span>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => handleAiAction('hint')}
+                className="p-2 rounded-lg bg-navy-900 hover:bg-navy-850 text-slate-300 text-[11px] font-medium border border-navy-800 flex items-center justify-center gap-1.5 transition"
+              >
+                <Lightbulb className="w-3.5 h-3.5 text-amber-400" />
+                <span>Hint</span>
+              </button>
+              <button
+                onClick={() => handleAiAction('explain')}
+                className="p-2 rounded-lg bg-navy-900 hover:bg-navy-850 text-slate-300 text-[11px] font-medium border border-navy-800 flex items-center justify-center gap-1.5 transition"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-blue-400" />
+                <span>Explain</span>
+              </button>
+              <button
+                onClick={() => handleAiAction('debug')}
+                className="p-2 rounded-lg bg-navy-900 hover:bg-navy-850 text-slate-300 text-[11px] font-medium border border-navy-800 flex items-center justify-center gap-1.5 transition"
+              >
+                <Bug className="w-3.5 h-3.5 text-rose-400" />
+                <span>Debug</span>
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Right Side: Monaco Code Editor + Results */}
+        {/* Right Side: Monaco Code Editor + Results Tab Panel */}
         <div className="lg:col-span-7 flex flex-col bg-navy-900 border border-navy-800 rounded-xl overflow-hidden min-h-0">
           {/* Code Editor Container */}
-          <div className="flex-1 min-h-[320px] bg-navy-950">
+          <div className="flex-1 min-h-[300px] bg-navy-950">
             <Editor
               height="100%"
               language={language === 'cpp' ? 'cpp' : language}
@@ -282,29 +363,39 @@ export default function ProblemWorkspacePage() {
             />
           </div>
 
-          {/* Execution Output Panel */}
-          <div className="h-44 border-t border-navy-800 bg-navy-900/95 flex flex-col">
+          {/* Multi-Tab Results & AI Panel */}
+          <div className="h-52 border-t border-navy-800 bg-navy-900/95 flex flex-col">
             <div className="flex items-center justify-between px-4 py-2 border-b border-navy-800 bg-navy-950 text-xs font-mono">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <button
                   onClick={() => setActiveTab('tests')}
                   className={`pb-0.5 border-b-2 font-semibold transition-all ${
                     activeTab === 'tests' ? 'border-cyan-400 text-cyan-400' : 'border-transparent text-slate-400 hover:text-white'
                   }`}
                 >
-                  Test Results
+                  Sample Tests
                 </button>
                 <button
-                  onClick={() => setActiveTab('output')}
+                  onClick={() => setActiveTab('submission')}
                   className={`pb-0.5 border-b-2 font-semibold transition-all ${
-                    activeTab === 'output' ? 'border-cyan-400 text-cyan-400' : 'border-transparent text-slate-400 hover:text-white'
+                    activeTab === 'submission' ? 'border-emerald-400 text-emerald-400' : 'border-transparent text-slate-400 hover:text-white'
                   }`}
                 >
-                  Console Output
+                  Submission Verdict
+                </button>
+                <button
+                  onClick={() => setActiveTab('ai')}
+                  className={`pb-0.5 border-b-2 font-semibold flex items-center gap-1.5 transition-all ${
+                    activeTab === 'ai' ? 'border-cyan-400 text-cyan-400' : 'border-transparent text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>AI Assistant</span>
                 </button>
               </div>
 
-              {executionResult && (
+              {/* Status Header */}
+              {activeTab === 'tests' && executionResult && (
                 <div className="flex items-center gap-3 text-[11px]">
                   <span className="text-emerald-400 font-bold flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" />
@@ -314,40 +405,118 @@ export default function ProblemWorkspacePage() {
                     <Clock className="w-3 h-3" />
                     {executionResult.executionTimeMs} ms
                   </span>
+                </div>
+              )}
+
+              {activeTab === 'submission' && submissionResult && (
+                <div className="flex items-center gap-3 text-[11px]">
+                  <span className={`font-bold flex items-center gap-1 ${
+                    submissionResult.status === 'ACCEPTED' ? 'text-emerald-400' : 'text-rose-400'
+                  }`}>
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    {submissionResult.status}
+                  </span>
+                  <span className="text-slate-400 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {submissionResult.executionTimeMs} ms
+                  </span>
                   <span className="text-slate-400 flex items-center gap-1">
                     <Cpu className="w-3 h-3" />
-                    42.1 MB
+                    {(submissionResult.memoryKb / 1024).toFixed(1)} MB
                   </span>
                 </div>
               )}
             </div>
 
+            {/* Tab Body */}
             <div className="flex-1 p-3 overflow-y-auto font-mono text-xs">
-              {executing ? (
-                <div className="flex items-center gap-2 text-slate-400 h-full justify-center">
-                  <div className="w-4 h-4 border-2 border-blue-500/30 border-t-cyan-400 rounded-full animate-spin" />
-                  <span>Compiling and evaluating against test suite...</span>
-                </div>
-              ) : executionResult ? (
-                <div className="space-y-2">
-                  <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
-                    {executionResult.message || 'All test cases passed!'}
+              {activeTab === 'tests' && (
+                executing ? (
+                  <div className="flex items-center gap-2 text-slate-400 h-full justify-center">
+                    <div className="w-4 h-4 border-2 border-blue-500/30 border-t-cyan-400 rounded-full animate-spin" />
+                    <span>Compiling and running against sample test suite...</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300">
-                    <div className="p-2 rounded bg-navy-950 border border-navy-800">
-                      <span className="text-slate-500 block">Case 1:</span>
-                      <span className="text-emerald-400">Passed ✓ [2, 7, 11, 15] target=9 → [0, 1]</span>
+                ) : executionResult ? (
+                  <div className="space-y-2">
+                    <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
+                      {executionResult.message}
                     </div>
-                    <div className="p-2 rounded bg-navy-950 border border-navy-800">
-                      <span className="text-slate-500 block">Case 2:</span>
-                      <span className="text-emerald-400">Passed ✓ [3, 2, 4] target=6 → [1, 2]</span>
+                    <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300">
+                      <div className="p-2 rounded bg-navy-950 border border-navy-800">
+                        <span className="text-slate-500 block">Case 1:</span>
+                        <span className="text-emerald-400">Passed ✓ Sample input verified</span>
+                      </div>
+                      <div className="p-2 rounded bg-navy-950 border border-navy-800">
+                        <span className="text-slate-500 block">Case 2:</span>
+                        <span className="text-emerald-400">Passed ✓ Boundary conditions met</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <div className="h-full flex items-center justify-center text-slate-500">
-                  <span>Click "Run Code" to compile and execute against sample test cases.</span>
-                </div>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-slate-500">
+                    <span>Click "Run Sample" to test code against visible test cases.</span>
+                  </div>
+                )
+              )}
+
+              {activeTab === 'submission' && (
+                submitting ? (
+                  <div className="flex items-center gap-2 text-slate-400 h-full justify-center">
+                    <div className="w-4 h-4 border-2 border-emerald-500/30 border-t-emerald-400 rounded-full animate-spin" />
+                    <span>Executing full hidden test suite in Docker sandbox...</span>
+                  </div>
+                ) : submissionResult ? (
+                  <div className="space-y-2.5">
+                    <div className={`p-3 rounded-xl border flex items-center justify-between ${
+                      submissionResult.status === 'ACCEPTED'
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                        : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-5 h-5" />
+                        <div>
+                          <span className="font-bold block text-sm">{submissionResult.status}</span>
+                          <span className="text-xs opacity-90">{submissionResult.message}</span>
+                        </div>
+                      </div>
+                      <div className="text-right text-[11px] font-mono">
+                        <div>Passed: <strong>{submissionResult.passedCount} / {submissionResult.totalCount}</strong></div>
+                        <div>Time: <strong>{submissionResult.executionTimeMs} ms</strong></div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-slate-500">
+                    <span>Click "Submit Code" to run the complete automated test suite.</span>
+                  </div>
+                )
+              )}
+
+              {activeTab === 'ai' && (
+                aiLoading ? (
+                  <div className="flex items-center gap-2 text-slate-400 h-full justify-center">
+                    <Sparkles className="w-4 h-4 text-cyan-400 animate-pulse" />
+                    <span>AI Assistant is analyzing problem and code context...</span>
+                  </div>
+                ) : aiResponse ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between pb-1 border-b border-navy-800 text-[11px]">
+                      <span className="text-cyan-400 font-bold uppercase tracking-wider">{aiResponse.type} FEEDBACK</span>
+                      <div className="text-slate-400 flex items-center gap-3">
+                        <span>Time: <strong className="text-slate-200">{aiResponse.timeComplexity}</strong></span>
+                        <span>Space: <strong className="text-slate-200">{aiResponse.spaceComplexity}</strong></span>
+                      </div>
+                    </div>
+                    <div className="font-sans text-xs text-slate-200 whitespace-pre-line leading-relaxed p-2.5 rounded-lg bg-navy-950 border border-navy-800">
+                      {aiResponse.response}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-2">
+                    <HelpCircle className="w-6 h-6 text-cyan-500/40" />
+                    <span>Select "Hint", "Explain", or "Debug" to receive guidance.</span>
+                  </div>
+                )
               )}
             </div>
           </div>

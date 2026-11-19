@@ -1,7 +1,42 @@
-import React from 'react';
-import { LineChart, Award, Zap, Flame, Calendar, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { LineChart, Award, Zap, Flame, Trophy, CheckCircle2, User } from 'lucide-react';
+import { leaderboardService } from '../services/leaderboardService';
+import { progressService } from '../services/progressService';
 
 export default function ProgressPage() {
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [progress, setProgress] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [leadData, progData] = await Promise.all([
+          leaderboardService.getLeaderboard().catch(() => []),
+          progressService.getProgress().catch(() => null)
+        ]);
+        setLeaderboard(leadData.length > 0 ? leadData : [
+          { rank: 1, name: 'Ayananshu Mahapatra', score: 2850, problemsSolved: 84, badge: 'Grandmaster' },
+          { rank: 2, name: 'Sarah Connor', score: 2420, problemsSolved: 71, badge: 'Master' },
+          { rank: 3, name: 'David Kim', score: 2180, problemsSolved: 65, badge: 'Candidate Master' },
+          { rank: 4, name: 'Elena Rostova', score: 1950, problemsSolved: 58, badge: 'Expert' }
+        ]);
+        setProgress(progData || {
+          totalSolved: 3,
+          easySolved: 2,
+          mediumSolved: 1,
+          hardSolved: 0,
+          totalProblems: 5,
+          streakDays: 4,
+          acceptanceRate: '75.0%'
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
   const topics = [
     { name: 'Arrays & Hashing', completed: 18, total: 25 },
     { name: 'Two Pointers', completed: 10, total: 15 },
@@ -19,9 +54,34 @@ export default function ProgressPage() {
           <span>Progress & Analytics</span>
         </h1>
         <p className="text-xs text-slate-400 mt-1">
-          Detailed metrics tracking your algorithm mastery and learning velocity.
+          Detailed metrics tracking your algorithm mastery, learning velocity, and global standings.
         </p>
       </div>
+
+      {/* Progress Cards */}
+      {progress && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="bg-navy-850/80 border border-navy-800 rounded-xl p-4">
+            <span className="text-xs text-slate-400 block font-mono">Total Solved</span>
+            <span className="text-2xl font-extrabold text-white mt-1 block">{progress.totalSolved} / {progress.totalProblems}</span>
+          </div>
+          <div className="bg-navy-850/80 border border-navy-800 rounded-xl p-4">
+            <span className="text-xs text-slate-400 block font-mono">Daily Streak</span>
+            <span className="text-2xl font-extrabold text-amber-400 mt-1 flex items-center gap-1.5">
+              <Flame className="w-5 h-5" />
+              <span>{progress.streakDays} Days</span>
+            </span>
+          </div>
+          <div className="bg-navy-850/80 border border-navy-800 rounded-xl p-4">
+            <span className="text-xs text-slate-400 block font-mono">Acceptance Rate</span>
+            <span className="text-2xl font-extrabold text-emerald-400 mt-1 block">{progress.acceptanceRate}</span>
+          </div>
+          <div className="bg-navy-850/80 border border-navy-800 rounded-xl p-4">
+            <span className="text-xs text-slate-400 block font-mono">Division</span>
+            <span className="text-2xl font-extrabold text-cyan-400 mt-1 block">Specialist</span>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Topic Mastery */}
@@ -96,6 +156,60 @@ export default function ProgressPage() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Global Leaderboard Table */}
+      <div className="bg-navy-850/80 border border-navy-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="flex items-center justify-between border-b border-navy-800 pb-3">
+          <h2 className="text-base font-bold text-white flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-amber-400" />
+            <span>Global Leaderboard</span>
+          </h2>
+          <span className="text-xs font-mono text-slate-400">Top Competitive Programmers</span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-navy-900 text-slate-400 uppercase font-mono tracking-wider border-b border-navy-800">
+              <tr>
+                <th className="py-3 px-4">Rank</th>
+                <th className="py-3 px-4">Programmer</th>
+                <th className="py-3 px-4">Tier Badge</th>
+                <th className="py-3 px-4">Problems Solved</th>
+                <th className="py-3 px-4 text-right">Rating Score</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-navy-800/80 font-sans">
+              {leaderboard.map((item) => (
+                <tr key={item.rank} className="hover:bg-navy-800/40 transition">
+                  <td className="py-3 px-4 font-mono font-bold">
+                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs ${
+                      item.rank === 1 ? 'bg-amber-400 text-navy-950 font-black' :
+                      item.rank === 2 ? 'bg-slate-300 text-navy-950 font-black' :
+                      item.rank === 3 ? 'bg-amber-600 text-white font-black' :
+                      'text-slate-400'
+                    }`}>
+                      {item.rank}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 font-semibold text-white flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-navy-900 border border-navy-700 flex items-center justify-center text-[10px] text-cyan-400 font-mono">
+                      {item.name.charAt(0)}
+                    </div>
+                    <span>{item.name}</span>
+                  </td>
+                  <td className="py-3 px-4">
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-blue-500/10 text-cyan-300 border border-blue-500/20">
+                      {item.badge}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 font-mono text-slate-300">{item.problemsSolved}</td>
+                  <td className="py-3 px-4 font-mono text-amber-400 font-bold text-right">{item.score} pts</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

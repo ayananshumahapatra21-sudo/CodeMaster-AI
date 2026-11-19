@@ -1,28 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Terminal, Search, CheckCircle2, ArrowRight } from 'lucide-react';
-import { problemsApi } from '../api/client';
+import { problemService } from '../services/problemService';
 
 export default function ProblemsPage() {
   const [search, setSearch] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('All');
+  const [selectedTopic, setSelectedTopic] = useState('All');
   const [problems, setProblems] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadProblems() {
       try {
-        const data = await problemsApi.getProblems();
+        const data = await problemService.getAllProblems();
         setProblems(data);
       } catch (err) {
         console.warn('Failed to fetch problems from backend, using default list:', err);
         setProblems([
-          { id: 1, title: 'Two Sum', category: 'Arrays & Hashing', difficulty: 'Easy', status: 'Solved', acceptance: '52.4%' },
-          { id: 2, title: 'Valid Anagram', category: 'Strings', difficulty: 'Easy', status: 'Solved', acceptance: '64.1%' },
-          { id: 3, title: 'Longest Substring Without Repeating Characters', category: 'Sliding Window', difficulty: 'Medium', status: 'Attempted', acceptance: '34.8%' },
-          { id: 4, title: 'Trapping Rain Water', category: 'Two Pointers', difficulty: 'Hard', status: 'Unsolved', acceptance: '61.2%' },
-          { id: 5, title: 'Reverse Linked List', category: 'Linked Lists', difficulty: 'Easy', status: 'Solved', acceptance: '76.8%' },
-          { id: 6, title: 'Lowest Common Ancestor of a BST', category: 'Trees', difficulty: 'Medium', status: 'Unsolved', acceptance: '53.9%' }
+          { id: 1, title: 'Two Sum', topic: 'Arrays & Hashing', difficulty: 'Easy', status: 'Solved', acceptance: '52.4%' },
+          { id: 2, title: 'Valid Anagram', topic: 'Strings', difficulty: 'Easy', status: 'Solved', acceptance: '64.1%' },
+          { id: 3, title: 'Longest Substring Without Repeating Characters', topic: 'Sliding Window', difficulty: 'Medium', status: 'Attempted', acceptance: '34.8%' },
+          { id: 4, title: 'Valid Parentheses', topic: 'Stack', difficulty: 'Easy', status: 'Unsolved', acceptance: '40.5%' },
+          { id: 5, title: 'Trapping Rain Water', topic: 'Two Pointers', difficulty: 'Hard', status: 'Unsolved', acceptance: '60.2%' }
         ]);
       } finally {
         setLoading(false);
@@ -31,10 +31,14 @@ export default function ProblemsPage() {
     loadProblems();
   }, []);
 
+  const topics = ['All', ...new Set(problems.map(p => p.topic || p.category).filter(Boolean))];
+
   const filtered = problems.filter(p => {
-    const matchesSearch = p.title.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase());
+    const topicVal = p.topic || p.category || '';
+    const matchesSearch = p.title.toLowerCase().includes(search.toLowerCase()) || topicVal.toLowerCase().includes(search.toLowerCase());
     const matchesDiff = selectedDifficulty === 'All' || p.difficulty.toLowerCase() === selectedDifficulty.toLowerCase();
-    return matchesSearch && matchesDiff;
+    const matchesTopic = selectedTopic === 'All' || topicVal.toLowerCase() === selectedTopic.toLowerCase();
+    return matchesSearch && matchesDiff && matchesTopic;
   });
 
   const getDifficultyBadge = (diff) => {
@@ -60,11 +64,11 @@ export default function ProblemsPage() {
             <span>Problem Bank</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
-            Browse and practice curated competitive programming problems. Click "Solve" to open the Monaco Editor.
+            Browse and practice curated competitive programming challenges with Monaco Editor and live test execution.
           </p>
         </div>
 
-        {/* Search & Filter */}
+        {/* Search & Difficulty Filter */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -73,7 +77,7 @@ export default function ProblemsPage() {
               placeholder="Search problems or topics..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="bg-navy-900 border border-navy-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors w-64"
+              className="bg-navy-900 border border-navy-800 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors w-60"
             />
           </div>
 
@@ -94,6 +98,26 @@ export default function ProblemsPage() {
           </div>
         </div>
       </div>
+
+      {/* Topic Filter Pills */}
+      {topics.length > 2 && (
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          <span className="text-xs font-mono text-slate-400 shrink-0">Filter by Topic:</span>
+          {topics.map((t) => (
+            <button
+              key={t}
+              onClick={() => setSelectedTopic(t)}
+              className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-all border ${
+                selectedTopic === t
+                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                  : 'bg-navy-900 text-slate-400 border-navy-800 hover:text-slate-200 hover:border-navy-700'
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-navy-850/80 border border-navy-800 rounded-2xl overflow-hidden shadow-xl">
@@ -135,7 +159,7 @@ export default function ProblemsPage() {
                   </td>
                   <td className="py-4 px-6">
                     <span className="px-2.5 py-1 rounded-md bg-navy-900 text-slate-300 border border-navy-800 text-[11px] font-mono">
-                      {item.category}
+                      {item.topic || item.category || 'General'}
                     </span>
                   </td>
                   <td className="py-4 px-6">
