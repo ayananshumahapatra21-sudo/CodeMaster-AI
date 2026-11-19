@@ -1,0 +1,9 @@
+{
+  "language": "java",
+  "extension": ".java",
+  "filename": "Solution.java",
+  "compileCmd": ["javac", "Solution.java"],
+  "runCmd": ["java", "-Xmx256m", "Solution"],
+  "timeoutSeconds": 2.0,
+  "memoryLimitMb": 256
+}

@@ -1,0 +1,9 @@
+{
+  "language": "cpp",
+  "extension": ".cpp",
+  "filename": "solution.cpp",
+  "compileCmd": ["g++", "-O3", "solution.cpp", "-o", "solution"],
+  "runCmd": ["./solution"],
+  "timeoutSeconds": 2.0,
+  "memoryLimitMb": 128
+}

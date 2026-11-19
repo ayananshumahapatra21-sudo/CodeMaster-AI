@@ -1,0 +1,9 @@
+{
+  "language": "python",
+  "extension": ".py",
+  "filename": "solution.py",
+  "compileCmd": null,
+  "runCmd": ["python3", "solution.py"],
+  "timeoutSeconds": 2.0,
+  "memoryLimitMb": 128
+}
