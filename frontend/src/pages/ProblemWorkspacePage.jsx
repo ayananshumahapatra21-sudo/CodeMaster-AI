@@ -66,10 +66,10 @@ export default function ProblemWorkspacePage() {
             { input: 'nums = [2,7,11,15], target = 9', output: '[0,1]', explanation: 'Because nums[0] + nums[1] == 9, we return [0, 1].' }
           ],
           starterTemplates: {
-            java: 'class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // Your code here\n        return new int[]{0, 1};\n    }\n}',
-            python: 'class Solution:\n    def twoSum(self, nums: list[int], target: int) -> list[int]:\n        return [0, 1]',
-            javascript: 'function twoSum(nums, target) {\n    return [0, 1];\n}',
-            cpp: 'class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        return {0, 1};\n    }\n};'
+            java: 'class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // Write your solution here\n        return new int[0];\n    }\n}',
+            python: 'class Solution:\n    def twoSum(self, nums: list[int], target: int) -> list[int]:\n        # Write your solution here\n        return []',
+            javascript: 'function twoSum(nums, target) {\n    // Write your solution here\n    return [];\n}',
+            cpp: 'class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        // Write your solution here\n        return {};\n    }\n};'
           }
         };
         setProblem(fallback);
