@@ -6,6 +6,7 @@ import AuthModal from './AuthModal';
 
 export default function Navbar({ systemStatus }) {
   const isHealthy = systemStatus?.status === 'UP' && systemStatus?.database?.status === 'CONNECTED';
+  const isDemoMode = typeof window !== 'undefined' && window.location.hostname.includes('github.io');
   const { user, logout, isAuthenticated } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
 
@@ -90,17 +91,17 @@ export default function Navbar({ systemStatus }) {
                 <span className="relative flex h-2 w-2">
                   <span
                     className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                      isHealthy ? 'bg-emerald-400' : 'bg-amber-400'
+                      isHealthy ? 'bg-emerald-400' : isDemoMode ? 'bg-cyan-400' : 'bg-amber-400'
                     }`}
                   />
                   <span
                     className={`relative inline-flex rounded-full h-2 w-2 ${
-                      isHealthy ? 'bg-emerald-500' : 'bg-amber-500'
+                      isHealthy ? 'bg-emerald-500' : isDemoMode ? 'bg-cyan-500' : 'bg-amber-500'
                     }`}
                   />
                 </span>
                 <span className="text-xs font-mono font-medium text-slate-300 hidden sm:inline">
-                  {isHealthy ? 'Operational' : 'Connecting...'}
+                  {isHealthy ? 'Operational' : isDemoMode ? 'Cloud Preview' : 'Connecting...'}
                 </span>
               </div>
 

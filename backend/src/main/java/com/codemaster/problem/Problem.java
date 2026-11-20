@@ -38,7 +38,7 @@ public class Problem {
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "problem_topics",
             joinColumns = @JoinColumn(name = "problem_id"),
@@ -46,7 +46,7 @@ public class Problem {
     )
     private Set<Topic> topics = new HashSet<>();
 
-    @OneToMany(mappedBy = "problem", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "problem", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JsonManagedReference
     private List<TestCase> testCases = new ArrayList<>();
 
