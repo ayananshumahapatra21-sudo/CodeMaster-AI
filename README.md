@@ -2,6 +2,8 @@
 
 > Next-generation AI-powered competitive programming platform designed and engineered by **Ayananshu Mahapatra**.
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-2ea44f.svg?style=for-the-badge&logo=github)](https://ayananshumahapatra21-sudo.github.io/CodeMaster-AI/)
+[![CI/CD](https://github.com/ayananshumahapatra21-sudo/CodeMaster-AI/actions/workflows/deploy.yml/badge.svg)](https://github.com/ayananshumahapatra21-sudo/CodeMaster-AI/actions/workflows/deploy.yml)
 [![Java 21+](https://img.shields.io/badge/Java-21%2B%20%2F%2025-orange.svg)](https://www.oracle.com/java/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![React](https://img.shields.io/badge/React-18-blue.svg)](https://reactjs.org/)
