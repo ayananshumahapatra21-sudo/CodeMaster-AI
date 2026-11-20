@@ -5,7 +5,8 @@ COPY pom.xml .
 COPY src ./src
 RUN mvn clean package -DskipTests
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jdk-alpine
+RUN apk add --no-cache nodejs npm bash
 WORKDIR /app
 COPY --from=build /app/target/codemaster-api-1.0.0-SNAPSHOT.jar app.jar
 EXPOSE 8080
