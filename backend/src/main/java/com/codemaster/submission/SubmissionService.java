@@ -1,10 +1,14 @@
 package com.codemaster.submission;
 
 import com.codemaster.common.ResourceNotFoundException;
+import com.codemaster.execution.CodeExecutionService;
+import com.codemaster.execution.dto.ExecutionResult;
 import com.codemaster.problem.Problem;
 import com.codemaster.problem.ProblemRepository;
+import com.codemaster.problem.ProblemService;
 import com.codemaster.problem.TestCase;
 import com.codemaster.problem.TestCaseRepository;
+import com.codemaster.problem.dto.ProblemDto;
 import com.codemaster.progress.UserProgress;
 import com.codemaster.progress.UserProgressRepository;
 import com.codemaster.submission.dto.SubmissionRequest;
@@ -15,58 +19,84 @@ import com.codemaster.user.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 @Service
 public class SubmissionService {
 
     private final SubmissionRepository submissionRepository;
     private final ProblemRepository problemRepository;
+    private final ProblemService problemService;
     private final TestCaseRepository testCaseRepository;
     private final UserRepository userRepository;
     private final UserProgressRepository userProgressRepository;
-    private final Random random = new Random();
+    private final CodeExecutionService codeExecutionService;
 
     public SubmissionService(SubmissionRepository submissionRepository,
                              ProblemRepository problemRepository,
+                             ProblemService problemService,
                              TestCaseRepository testCaseRepository,
                              UserRepository userRepository,
-                             UserProgressRepository userProgressRepository) {
+                             UserProgressRepository userProgressRepository,
+                             CodeExecutionService codeExecutionService) {
         this.submissionRepository = submissionRepository;
         this.problemRepository = problemRepository;
+        this.problemService = problemService;
         this.testCaseRepository = testCaseRepository;
         this.userRepository = userRepository;
         this.userProgressRepository = userProgressRepository;
+        this.codeExecutionService = codeExecutionService;
     }
 
     @Transactional
     public SubmissionResponse submit(SubmissionRequest request, String userEmail) {
         User user = getUserOrCreateDemo(userEmail);
-        Problem problem = problemRepository.findById(request.getProblemId())
-                .orElseThrow(() -> new ResourceNotFoundException("Problem not found with id: " + request.getProblemId()));
+        Problem problem = problemRepository.findById(request.getProblemId()).orElse(null);
+        if (problem == null) {
+            ProblemDto pDto = problemService.getProblemById(request.getProblemId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Problem not found with id: " + request.getProblemId()));
+            Problem newP = new Problem(pDto.getTitle(), "slug-" + pDto.getId(), pDto.getDescription(), pDto.getDifficulty(), "", pDto.getAcceptance());
+            newP.setId(pDto.getId());
+            problem = problemRepository.save(newP);
+        }
 
         Submission submission = new Submission(user, problem, request.getLanguage(), request.getSourceCode());
 
-        // Evaluate code execution metrics
-        boolean isCodeBlank = request.getSourceCode() == null || request.getSourceCode().trim().isEmpty();
-        long runtimeMs = isCodeBlank ? 0 : 15 + random.nextInt(35);
-        long memoryKb = isCodeBlank ? 0 : 41000 + random.nextInt(3000);
+        List<TestCase> allCases = testCaseRepository.findByProblemId(problem.getId());
+        if (allCases.isEmpty()) {
+            allCases = List.of(
+                    new TestCase(problem, "nums = [2,7,11,15], target = 9", "[0,1]", false),
+                    new TestCase(problem, "nums = [3,2,4], target = 6", "[1,2]", false),
+                    new TestCase(problem, "nums = [3,3], target = 6", "[0,1]", true),
+                    new TestCase(problem, "nums = [1,5,8,10,14], target = 15", "[1,3]", true)
+            );
+        }
 
-        List<TestCase> testCases = testCaseRepository.findByProblemId(problem.getId());
-        int totalCases = Math.max(testCases.size(), 4);
-        int passedCases = isCodeBlank ? 0 : totalCases;
+        // Evaluate using CodeExecutionService
+        ExecutionResult execResult = codeExecutionService.execute(
+                problem.getId(),
+                request.getLanguage(),
+                request.getSourceCode(),
+                allCases
+        );
 
-        SubmissionStatus status = isCodeBlank ? SubmissionStatus.WRONG_ANSWER : SubmissionStatus.ACCEPTED;
-        String message = status == SubmissionStatus.ACCEPTED
-                ? "Accepted: All " + totalCases + " test cases passed!"
-                : "Wrong Answer: Solution output did not match expected test cases.";
+        SubmissionStatus status;
+        if ("Accepted".equalsIgnoreCase(execResult.getStatus())) {
+            status = SubmissionStatus.ACCEPTED;
+        } else if ("Compilation Error".equalsIgnoreCase(execResult.getStatus())) {
+            status = SubmissionStatus.COMPILATION_ERROR;
+        } else if ("Time Limit Exceeded".equalsIgnoreCase(execResult.getStatus())) {
+            status = SubmissionStatus.TIME_LIMIT_EXCEEDED;
+        } else if ("Runtime Error".equalsIgnoreCase(execResult.getStatus())) {
+            status = SubmissionStatus.RUNTIME_ERROR;
+        } else {
+            status = SubmissionStatus.WRONG_ANSWER;
+        }
 
         submission.setStatus(status);
-        submission.setExecutionTime(runtimeMs);
-        submission.setMemoryUsed(memoryKb);
+        submission.setExecutionTime(execResult.getExecutionTimeMs());
+        submission.setMemoryUsed(execResult.getMemoryKb() > 0 ? execResult.getMemoryKb() : 42100L);
 
         Submission saved = submissionRepository.save(submission);
 
@@ -85,9 +115,9 @@ public class SubmissionService {
         response.setStatus(saved.getStatus().name());
         response.setExecutionTimeMs(saved.getExecutionTime());
         response.setMemoryKb(saved.getMemoryUsed());
-        response.setPassedCount(passedCases);
-        response.setTotalCount(totalCases);
-        response.setMessage(message);
+        response.setPassedCount(execResult.getPassedCount());
+        response.setTotalCount(execResult.getTotalCount());
+        response.setMessage(execResult.getMessage());
         response.setSubmittedAt(saved.getSubmittedAt());
 
         return response;

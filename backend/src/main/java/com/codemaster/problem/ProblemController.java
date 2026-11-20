@@ -1,6 +1,8 @@
 package com.codemaster.problem;
 
 import com.codemaster.common.ApiResponse;
+import com.codemaster.execution.CodeExecutionService;
+import com.codemaster.execution.dto.ExecutionResult;
 import com.codemaster.problem.dto.ProblemDto;
 import com.codemaster.problem.dto.ProblemRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,9 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping
@@ -20,9 +22,15 @@ import java.util.Map;
 public class ProblemController {
 
     private final ProblemService problemService;
+    private final CodeExecutionService codeExecutionService;
+    private final TestCaseRepository testCaseRepository;
 
-    public ProblemController(ProblemService problemService) {
+    public ProblemController(ProblemService problemService,
+                             CodeExecutionService codeExecutionService,
+                             TestCaseRepository testCaseRepository) {
         this.problemService = problemService;
+        this.codeExecutionService = codeExecutionService;
+        this.testCaseRepository = testCaseRepository;
     }
 
     @GetMapping({"/api/problems", "/api/v1/problems"})
@@ -52,22 +60,34 @@ public class ProblemController {
 
     @PostMapping({"/api/problems/{id}/run", "/api/v1/problems/{id}/run"})
     @Operation(summary = "Execute code against sample test cases", description = "Compiles and executes code in a sandbox against sample test cases.")
-    public ResponseEntity<Map<String, Object>> runCode(
+    public ResponseEntity<ExecutionResult> runCode(
             @PathVariable Long id,
             @RequestBody Map<String, String> payload) {
 
         String code = payload.getOrDefault("code", "");
         String language = payload.getOrDefault("language", "java");
 
-        Map<String, Object> result = new HashMap<>();
-        result.put("status", "Accepted");
-        result.put("passedCount", 2);
-        result.put("totalCount", 2);
-        result.put("executionTimeMs", 14);
-        result.put("memoryKb", 42100);
-        result.put("message", "All sample test cases passed successfully!");
-        result.put("language", language);
+        List<TestCase> cases = testCaseRepository.findByProblemIdAndIsHiddenFalse(id);
+        if (cases.isEmpty()) {
+            cases = testCaseRepository.findByProblemId(id);
+        }
 
+        // If no test cases in DB, populate from problem examples
+        if (cases.isEmpty()) {
+            ProblemDto problemDto = problemService.getProblemById(id).orElse(null);
+            if (problemDto != null && problemDto.getExamples() != null && !problemDto.getExamples().isEmpty()) {
+                cases = problemDto.getExamples().stream()
+                        .map(ex -> new TestCase(null, ex.get("input"), ex.get("output"), false))
+                        .collect(Collectors.toList());
+            } else {
+                cases = List.of(
+                        new TestCase(null, "nums = [2,7,11,15], target = 9", "[0,1]", false),
+                        new TestCase(null, "nums = [3,2,4], target = 6", "[1,2]", false)
+                );
+            }
+        }
+
+        ExecutionResult result = codeExecutionService.execute(id, language, code, cases);
         return ResponseEntity.ok(result);
     }
 }

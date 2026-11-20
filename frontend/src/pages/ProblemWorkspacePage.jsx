@@ -7,6 +7,7 @@ import {
   RotateCcw, 
   ChevronLeft, 
   CheckCircle2, 
+  XCircle,
   Terminal, 
   Clock, 
   Cpu, 
@@ -200,12 +201,12 @@ export default function ProblemWorkspacePage() {
             className="bg-navy-950 border border-navy-700 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-500 transition"
           >
             <option value="java">Java 21</option>
+            <option value="javascript">JavaScript (Node)</option>
             <option value="python">Python 3</option>
             <option value="cpp">C++ 20</option>
-            <option value="javascript">JavaScript</option>
           </select>
 
-          {/* AI Assistance Dropdown / Button */}
+          {/* AI Assistance Button */}
           <button
             onClick={() => handleAiAction('hint')}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/20 text-xs font-medium transition shadow-sm"
@@ -238,7 +239,7 @@ export default function ProblemWorkspacePage() {
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-navy-800 hover:bg-navy-700 text-slate-200 border border-navy-700 text-xs font-medium transition shadow-sm disabled:opacity-50"
           >
             <Play className="w-3.5 h-3.5 fill-current text-cyan-400" />
-            <span>{executing ? 'Running...' : 'Run Sample'}</span>
+            <span>{executing ? 'Compiling...' : 'Run Sample'}</span>
           </button>
 
           {/* Submit Code */}
@@ -364,7 +365,7 @@ export default function ProblemWorkspacePage() {
           </div>
 
           {/* Multi-Tab Results & AI Panel */}
-          <div className="h-52 border-t border-navy-800 bg-navy-900/95 flex flex-col">
+          <div className="h-56 border-t border-navy-800 bg-navy-900/95 flex flex-col">
             <div className="flex items-center justify-between px-4 py-2 border-b border-navy-800 bg-navy-950 text-xs font-mono">
               <div className="flex items-center gap-4">
                 <button
@@ -397,14 +398,19 @@ export default function ProblemWorkspacePage() {
               {/* Status Header */}
               {activeTab === 'tests' && executionResult && (
                 <div className="flex items-center gap-3 text-[11px]">
-                  <span className="text-emerald-400 font-bold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span className={`font-bold flex items-center gap-1 ${
+                    executionResult.status === 'Accepted' ? 'text-emerald-400' :
+                    executionResult.status === 'Wrong Answer' ? 'text-amber-400' : 'text-rose-400'
+                  }`}>
+                    {executionResult.status === 'Accepted' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
                     {executionResult.status}
                   </span>
-                  <span className="text-slate-400 flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    {executionResult.executionTimeMs} ms
-                  </span>
+                  {executionResult.executionTimeMs > 0 && (
+                    <span className="text-slate-400 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {executionResult.executionTimeMs} ms
+                    </span>
+                  )}
                 </div>
               )}
 
@@ -413,7 +419,7 @@ export default function ProblemWorkspacePage() {
                   <span className={`font-bold flex items-center gap-1 ${
                     submissionResult.status === 'ACCEPTED' ? 'text-emerald-400' : 'text-rose-400'
                   }`}>
-                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    {submissionResult.status === 'ACCEPTED' ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
                     {submissionResult.status}
                   </span>
                   <span className="text-slate-400 flex items-center gap-1">
@@ -434,27 +440,62 @@ export default function ProblemWorkspacePage() {
                 executing ? (
                   <div className="flex items-center gap-2 text-slate-400 h-full justify-center">
                     <div className="w-4 h-4 border-2 border-blue-500/30 border-t-cyan-400 rounded-full animate-spin" />
-                    <span>Compiling and running against sample test suite...</span>
+                    <span>Compiling code and evaluating against test cases...</span>
                   </div>
                 ) : executionResult ? (
-                  <div className="space-y-2">
-                    <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
-                      {executionResult.message}
+                  <div className="space-y-2.5">
+                    {/* Status Message */}
+                    <div className={`p-2.5 rounded-lg border text-xs font-sans ${
+                      executionResult.status === 'Accepted'
+                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
+                        : executionResult.status === 'Wrong Answer'
+                        ? 'bg-amber-500/10 border-amber-500/20 text-amber-300'
+                        : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
+                    }`}>
+                      <strong>{executionResult.status}:</strong> {executionResult.message}
                     </div>
-                    <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300">
-                      <div className="p-2 rounded bg-navy-950 border border-navy-800">
-                        <span className="text-slate-500 block">Case 1:</span>
-                        <span className="text-emerald-400">Passed ✓ Sample input verified</span>
+
+                    {/* Compiler Error Block */}
+                    {executionResult.compilerError && (
+                      <div className="p-3 rounded-lg bg-navy-950 border border-rose-500/30 text-rose-400 font-mono text-[11px] whitespace-pre-wrap">
+                        {executionResult.compilerError}
                       </div>
-                      <div className="p-2 rounded bg-navy-950 border border-navy-800">
-                        <span className="text-slate-500 block">Case 2:</span>
-                        <span className="text-emerald-400">Passed ✓ Boundary conditions met</span>
+                    )}
+
+                    {/* Test Case Cards */}
+                    {executionResult.testCases && executionResult.testCases.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                        {executionResult.testCases.map((tc) => (
+                          <div
+                            key={tc.caseNumber}
+                            className={`p-2.5 rounded-lg border ${
+                              tc.passed
+                                ? 'bg-navy-950 border-emerald-500/30 text-slate-200'
+                                : 'bg-navy-950 border-rose-500/40 text-slate-200'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-bold text-slate-400">Case {tc.caseNumber}:</span>
+                              <span className={`font-bold flex items-center gap-1 ${
+                                tc.passed ? 'text-emerald-400' : 'text-rose-400'
+                              }`}>
+                                {tc.passed ? 'Passed ✓' : 'Failed ✗'}
+                              </span>
+                            </div>
+                            <div className="text-[10px] space-y-0.5">
+                              <div><span className="text-slate-500">Input:</span> <span className="font-mono text-slate-300">{tc.input}</span></div>
+                              <div><span className="text-slate-500">Expected:</span> <span className="font-mono text-emerald-400">{tc.expected}</span></div>
+                              <div><span className="text-slate-500">Output:</span> <span className={`font-mono ${tc.passed ? 'text-emerald-400' : 'text-rose-400'}`}>{tc.actual}</span></div>
+                              {tc.error && <div className="text-rose-400 pt-0.5">{tc.error}</div>}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    </div>
+                    )}
                   </div>
                 ) : (
                   <div className="h-full flex items-center justify-center text-slate-500">
-                    <span>Click "Run Sample" to test code against visible test cases.</span>
+                    <span>Click "Run Sample" to compile and execute your solution.</span>
                   </div>
                 )
               )}
@@ -463,7 +504,7 @@ export default function ProblemWorkspacePage() {
                 submitting ? (
                   <div className="flex items-center gap-2 text-slate-400 h-full justify-center">
                     <div className="w-4 h-4 border-2 border-emerald-500/30 border-t-emerald-400 rounded-full animate-spin" />
-                    <span>Executing full hidden test suite in Docker sandbox...</span>
+                    <span>Executing full test suite against hidden inputs...</span>
                   </div>
                 ) : submissionResult ? (
                   <div className="space-y-2.5">
@@ -473,7 +514,7 @@ export default function ProblemWorkspacePage() {
                         : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
                     }`}>
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-5 h-5" />
+                        {submissionResult.status === 'ACCEPTED' ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
                         <div>
                           <span className="font-bold block text-sm">{submissionResult.status}</span>
                           <span className="text-xs opacity-90">{submissionResult.message}</span>
